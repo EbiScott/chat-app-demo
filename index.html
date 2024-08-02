@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
@@ -22,6 +23,7 @@
         </div>
     </div>
     <script>
+        var socket = io()
         $(() => {
             $("#send").click(() => {
                 var message = {
@@ -33,7 +35,9 @@
             getMessages()
         })
 
-        function addMessages(message){
+        socket.on('message', addMessage)
+
+        function addMessage(message){
             $("#messages").append(`<h4> ${message.name} </h4> <p> ${message.message} </p>`)
 
         }

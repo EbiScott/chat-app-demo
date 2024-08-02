@@ -1,30 +1,55 @@
-import res from "express/lib/response"
-import express from "express"
+var express = require('express')
 var bodyParser = require('body-parser')
 
 var app = express()
+var http = require('http').Server(app)
+var io = require('socket.io')(http)
 
+var mongoose = require('mongoose')
+var loadDotenv = require('dotenv')
 
 app.use(express.static(__dirname))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: false}))
 
 
-var messages = [
-    {name: 'Tim', message:'Hi'},
-    {name: 'Jane', message: 'Hello'}
-]
+var dbURI = MONGODB_URI
+
+
+var Message = mongoose.model('Message', {
+    name: String,
+    message: String
+})
 
 app.get('/messages', (req, res) => {
-    res.send(messages)
+    Message.find({}, (err, messages) => {
+        res.send(messages)
+    })
 })
 
 app.post('/messages', (req, res) => {
-    messages.push(req.body)
-    res.sendStatus(200)
+    var message = new Message(req.body)
+
+
+    message.save((err) => {
+        if(err)
+            sendStatus(500)
+
+        io.emit('message', req.body)
+        res.sendStatus(200)
+    })
+
+})
+
+io.on('connection', (socket) => {
+    console.log('a user connected')
+})
+
+mongoose.connect(dbURI, { useMongoClient: true }, (err) => {
+    console.log('mongo db connectio', err)
 })
 
 
-var server = app.listen(3000, () => {
+var server = http.listen(3000, () => {
     console.log('server is listening on port',  server.address().port)
 })
