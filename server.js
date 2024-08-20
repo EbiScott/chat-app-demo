@@ -54,7 +54,7 @@ io.on('connection', (socket) => {
 })
 
 mongoose.connect(dbURI, { useMongoClient: true }, (err) => {
-    console.log('mongo db connectio', err)
+    console.log('mongo db connection', err)
 })
 
 
