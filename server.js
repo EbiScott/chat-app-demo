@@ -1,63 +1,52 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-
-const app = express()
-const http = require('http').Server(app)
-const io = require('socket.io')(http)
-
-var mongoose = require('mongoose')
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
-app.use(express.static(__dirname))
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({extended: false}))
+const app = express();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
 
+app.use(express.static(__dirname));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
-const dbURI = process.env.MONGODB_URI
+const dbURI = process.env.MONGODB_URI;
 
+mongoose.connect(dbURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connection successful'))
+.catch((err) => console.log('MongoDB connection error:', err));
 
-var Message = mongoose.model('Message', {
+const Message = mongoose.model('Chatting', {
     name: String,
     message: String
-})
+});
 
 app.get('/messages', (req, res) => {
     Message.find({}, (err, messages) => {
-        res.send(messages)
-    })
-})
+        if (err) return res.sendStatus(500);
+        res.send(messages);
+    });
+});
 
 app.post('/messages', (req, res) => {
-    var message = new Message(req.body)
-
+    const message = new Message(req.body);
 
     message.save((err) => {
-        if(err)
-            sendStatus(500)
+        if (err) return res.sendStatus(500);
 
-        Message.findOne({message: 'badword'}, (err, censored) => {
-            if(censored){
-                console.log('censored words found', censored)
-                Message.remove({_id: censored.id}, (err) => {
-                    console.log('removed censored message')
-             } )}
-        })
-
-        io.emit('message', req.body)
-        res.sendStatus(200)
-    })
-
-})
+        io.emit('message', req.body);
+        res.sendStatus(200);
+    });
+});
 
 io.on('connection', (socket) => {
-    console.log('a user connected')
-})
+    console.log('a user connected');
+});
 
-mongoose.connect(dbURI, { useMongoClient: true }, (err) => {
-    console.log('mongo db connection', err)
-})
-
-
-var server = http.listen(3000, () => {
-    console.log('server is listening on port',  server.address().port)
-})
+const server = http.listen(3000, () => {
+    console.log('Server is listening on port', server.address().port);
+});
