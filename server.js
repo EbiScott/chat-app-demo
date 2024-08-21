@@ -11,6 +11,8 @@ app.use(express.static(__dirname));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+mongoose.Promise = Promise;
+
 const dbURI = process.env.MONGODB_URI;
 
 mongoose.connect(dbURI)
@@ -22,49 +24,46 @@ var Message = mongoose.model('Message', {
     message: String
 });
 
-app.get('/messages', (req, res) => {
-    Message.find({}, (err, messages) => {
-        res.send(messages);
-    });
-});
-
-// app.post('/messages', (req, res) => {
-//     var message = new Message(req.body);
-
-//     message.save((err) => {
-//         if (err) return res.sendStatus(500);
-
-//         Message.findOne({ message: 'badword' }, (err, censored) => {
-//             if (censored) {
-//                 console.log('Censored words found', censored);
-//                 Message.deleteOne({ _id: censored.id }, (err) => {
-//                     console.log('Removed censored message');
-//                 });
-//             }
-//         });
-
-//         io.emit('message', req.body);
-//         res.sendStatus(200);
-//     });
-// });
-app.post('/messages', async (req, res) => {
+// Updated GET /messages route using async/await
+app.get('/messages', async (req, res) => {
     try {
-        const message = new Message({ name: req.body.name, message: req.body.message });
-        await message.save();
-        io.emit('message', req.body);
-        res.sendStatus(200);
+        const messages = await Message.find({});
+        res.send(messages);
     } catch (err) {
-        console.log('Error saving message:', err);
+        console.log('Error fetching messages:', err);
         res.sendStatus(500);
     }
 });
 
+// Updated POST /messages route using async/await
+app.post('/messages', async (req, res) => {
+    try {
+        const message = new Message(req.body);
+        await message.save();
+        console.log('Saved to db');
+
+        const censored = await Message.findOne({ message: 'badword' });
+        if (censored) {
+            await Message.deleteOne({ _id: censored.id });
+            console.log('Removed censored message');
+        } else {
+            io.emit('message', req.body);
+        }
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error saving message:', error);
+        res.sendStatus(500);
+    } finally {
+        console.log('Message post called');
+    }
+});
 
 const server = http.createServer(app);
 const io = new Server(server);
 
 io.on('connection', (socket) => {
-    console.log('A user connected to application');
+    console.log('A user connected to the application');
 });
 
 server.listen(3000, () => {
