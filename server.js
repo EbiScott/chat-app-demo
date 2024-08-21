@@ -24,7 +24,7 @@ var Message = mongoose.model('Message', {
     message: String
 });
 
-// Updated GET /messages route using async/await
+
 app.get('/messages', async (req, res) => {
     try {
         const messages = await Message.find({});
@@ -35,7 +35,18 @@ app.get('/messages', async (req, res) => {
     }
 });
 
-// Updated POST /messages route using async/await
+app.get('/messages/:user', async (req, res) => {
+    try {
+        var user = req.params.user;
+        const messages = await Message.find({ name: user });
+        res.send(messages);
+    } catch (err) {
+        console.log('Error fetching messages:', err);
+        res.sendStatus(500);
+    }
+});
+
+
 app.post('/messages', async (req, res) => {
     try {
         const message = new Message(req.body);
