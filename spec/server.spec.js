@@ -34,8 +34,8 @@ describe('get messages from user', () => {
     })
     it('name should be james', (done) => {
         request.get('http://localhost:3000/messages/James', (err, res) => {
-            console.log(JSON.parse(res.body)[1].name)
-            expect(JSON.parse(res.body)[1].name).toEqual('James')
+            console.log(JSON.parse(res.body)[0].name)
+            expect(JSON.parse(res.body)[0].name).toEqual('James')
             done()
         })
     })

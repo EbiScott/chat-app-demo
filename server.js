@@ -39,10 +39,10 @@ app.get('/messages/:user', async (req, res) => {
     try {
         var user = req.params.user;
         const messages = await Message.find({ name: user });
-        res.send(messages);
+        res.json(messages);
     } catch (err) {
         console.log('Error fetching messages:', err);
-        res.sendStatus(500);
+        res.sendStatus(500).json({ error: 'Failed to fetch messages' });
     }
 });
 
